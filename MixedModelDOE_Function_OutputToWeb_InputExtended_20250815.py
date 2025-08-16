@@ -460,7 +460,14 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
     except Exception as e:
         print(f"❌ 分析过程中发生错误: {str(e)}")
         import traceback
-        print(f"详细错误信息:\n{traceback.format_exc()}")
+        tb = traceback.format_exc()
+        print(f"详细错误信息:\n{tb}")
+        # 关键：将异常堆栈也写入 Render 平台日志
+        try:
+            with open("/tmp/last_error.log", "w", encoding="utf-8") as f:
+                f.write(tb)
+        except Exception:
+            pass
     
     finally:
         # 恢复原始输出并获取捕获的文本
