@@ -318,7 +318,7 @@ async def store_analysis(request: dict):
             "timestamp": timestamp,
             "metadata": metadata,
             "files": available_files,
-            "download_base_url": "https://function-togithub-thentowebdirectly.onrender.com/download/"
+            "download_base_url": "https://function-togithub-thentowebdirectly-1zi3.onrender.com/download/"
         }
         
         return {

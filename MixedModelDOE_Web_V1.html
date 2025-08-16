@@ -432,7 +432,7 @@
                     <div class="config-grid">
                         <div class="config-item">
                             <strong>Endpoint</strong>
-                            <span>https://function-togithub-thentowebdirectly.onrender.com/runDOE</span>
+                            <span>https://function-togithub-thentowebdirectly-1zi3.onrender.com/runDOE</span>
                         </div>
                         <div class="config-item">
                             <strong>Response Variables</strong>
@@ -516,7 +516,7 @@
             formData.append('file', fileInput.files[0]);
             let file_path = '';
             try {
-                const uploadResp = await fetch('https://function-togithub-thentowebdirectly.onrender.com/runDOE', {
+                const uploadResp = await fetch('https://function-togithub-thentowebdirectly-1zi3.onrender.com/runDOE', {
                     method: 'POST',
                     body: formData
                 });
@@ -533,7 +533,7 @@
             }
             // 调用 /DOE_InputExtended
             try {
-                const resp = await fetch('https://function-togithub-thentowebdirectly.onrender.com/DOE_InputExtended', {
+                const resp = await fetch('https://function-togithub-thentowebdirectly-1zi3.onrender.com/DOE_InputExtended', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -558,7 +558,7 @@
             showLoading();
 
             try {
-                const response = await fetch('https://function-togithub-thentowebdirectly.onrender.com/runDOE');
+                const response = await fetch('https://function-togithub-thentowebdirectly-1zi3.onrender.com/runDOE');
                 const data = await response.json();
                 
                 document.getElementById('results').innerHTML = `
@@ -608,8 +608,8 @@
                     html += `
                         <div class="file-item">
                             <span>${file}</span>
-                            <a href="https://function-togithub-thentowebdirectly.onrender.com/download/${file}" 
-                               target="_blank" class="download-btn">Download</a>
+                                     <a href="https://function-togithub-thentowebdirectly-1zi3.onrender.com/download/${file}" 
+                                         target="_blank" class="download-btn">Download</a>
                         </div>
                     `;
                 });
