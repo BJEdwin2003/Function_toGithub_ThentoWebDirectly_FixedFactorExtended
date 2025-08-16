@@ -74,7 +74,7 @@ async def serve_html():
     """
     提供主 HTML 界面
     """
-    return FileResponse("doe_analysis_test_interface.html")
+    return FileResponse("MixedModelDOE_Web_V1.html")
 
 @app.post("/runDOE")
 async def run_doe(file: UploadFile = File(None)):
