@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOE Analysis Interface (Local Test)</title>
+    <style>
+        body { font-family: "Segoe UI", sans-serif; background: #f3f2f1; color: #323130; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; min-height: 100vh; }
+        .header { background: #0078d4; color: #fff; padding: 24px 32px; }
+        .header h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+        .header p { font-size: 16px; opacity: 0.9; }
+        .content { padding: 32px; }
+        .page-title { font-size: 32px; font-weight: 600; margin-bottom: 8px; }
+        .page-description { font-size: 16px; color: #605e5c; margin-bottom: 32px; }
+        .config-section, .upload-section, .results { background: #fff; border: 1px solid #edebe9; border-radius: 4px; margin-bottom: 24px; box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.13), 0 0.3px 0.9px 0 rgba(0,0,0,0.11); }
+        .config-header { padding: 16px 24px; border-bottom: 1px solid #edebe9; background: #faf9f8; }
+        .config-header h3 { font-size: 18px; font-weight: 600; }
+        .config-content { padding: 24px; }
+        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .config-item { padding: 16px; background: #f3f2f1; border-radius: 4px; border-left: 4px solid #0078d4; }
+        .upload-section { padding: 32px; text-align: center; }
+        .btn { background: #0078d4; border: 1px solid #0078d4; color: #fff; padding: 8px 16px; border-radius: 2px; cursor: pointer; font-size: 14px; min-width: 120px; height: 32px; margin: 8px; }
+        .btn-secondary { background: #fff; border: 1px solid #8a8886; color: #323130; }
+        .results { margin-top: 24px; overflow: hidden; }
+        pre { background: #323130; color: #fff; padding: 16px; border-radius: 2px; overflow-x: auto; white-space: pre-wrap; font-size: 13px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DOE Analysis Interface (Local Test)</h1>
+            <p>Design of Experiments Statistical Analysis Platform (Local FastAPI)</p>
+        </div>
+        <div class="content">
+            <h1 class="page-title">DOE Analysis</h1>
+            <p class="page-description">Upload your CSV file, select X/Y, and run local statistical analysis.</p>
+            <div class="config-section">
+                <div class="config-header"><h3>API Configuration</h3></div>
+                <div class="config-content">
+                    <div class="config-grid">
+                        <div class="config-item"><strong>Endpoint</strong><span>http://127.0.0.1:8000/runDOE</span></div>
+                        <div class="config-item"><strong>Threshold</strong><span>1.3</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="upload-section">
+                <h3>Select CSV File</h3>
+                <input type="file" id="csvFile" accept=".csv" onchange="handleCSVHeader()" />
+                <div id="columnSelectors" style="margin: 20px 0;"></div>
+                <div class="button-group">
+                    <button onclick="runDOEInputExtended()" class="btn">Run DOE (Custom X/Y)</button>
+                </div>
+            </div>
+            <div id="results"></div>
+        </div>
+    </div>
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        function getApiUrl(path) { return API_BASE + path; }
+        function handleCSVHeader() {
+            const fileInput = document.getElementById('csvFile');
+            const selectorsDiv = document.getElementById('columnSelectors');
+            selectorsDiv.innerHTML = '';
+            if (!fileInput.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const firstLine = text.split(/\r?\n/)[0];
+                let columns = firstLine.split(',').map(s => s.trim()).filter(Boolean);
+                if (columns.length === 0) {
+                    selectorsDiv.innerHTML = '<span style="color:red">Failed to parse CSV header.</span>';
+                    return;
+                }
+                selectorsDiv.innerHTML = `
+                    <label><b>Predictors (X):</b></label><br>
+                    <select id="predictorsSelect" multiple size="6" style="min-width:200px; margin-bottom:10px;">
+                        ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                    </select><br>
+                    <label><b>Response Variables (Y):</b></label><br>
+                    <select id="responseVarsSelect" multiple size="4" style="min-width:200px;">
+                        ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                    </select>
+                `;
+            };
+            reader.readAsText(fileInput.files[0]);
+        }
+        async function runDOEInputExtended() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files[0]) {
+                showError('Please select a CSV file first');
+                return;
+            }
+            const predictors = Array.from(document.getElementById('predictorsSelect')?.selectedOptions || []).map(o => o.value);
+            const responseVars = Array.from(document.getElementById('responseVarsSelect')?.selectedOptions || []).map(o => o.value);
+            if (predictors.length === 0 || responseVars.length === 0) {
+                showError('Please select at least one predictor and one response variable.');
+                return;
+            }
+            showLoading();
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            let file_path = '';
+            try {
+                const uploadResp = await fetch(getApiUrl('/runDOE'), {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!uploadResp.ok) {
+                    const errorText = await uploadResp.text();
+                    showError(`File upload failed: ${errorText}`);
+                    return;
+                }
+                const uploadResult = await uploadResp.json();
+                file_path = uploadResult.input_file;
+            } catch (e) {
+                showError('File upload failed: ' + e.message);
+                return;
+            }
+            try {
+                const resp = await fetch(getApiUrl('/DOE_InputExtended'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file_path,
+                        predictors,
+                        response_vars: responseVars
+                    })
+                });
+                if (resp.ok) {
+                    const result = await resp.json();
+                    showSuccess(result);
+                } else {
+                    const errorText = await resp.text();
+                    showError(`HTTP ${resp.status}: ${errorText}`);
+                }
+            } catch (e) {
+                showError('DOE analysis failed: ' + e.message);
+            }
+        }
+        function showLoading() {
+            document.getElementById('results').innerHTML = `
+                <div class="results loading">
+                    <div class="spinner"></div>
+                    <h3>Processing</h3>
+                    <p>Please wait while we analyze your data...</p>
+                </div>
+            `;
+        }
+        function showError(message) {
+            document.getElementById('results').innerHTML = `
+                <div class="results error">
+                    <h3>Operation Failed</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        function showSuccess(data) {
+            let html = `
+                <div class="results success">
+                    <h3>Analysis Completed Successfully</h3>
+                    <div class="files-section">
+                        <h4>Console Output</h4>
+                        <pre id="consoleOutput">${data.console_output || 'No console output available'}</pre>
+                        <h4>Generated Files</h4>
+                        <div>
+            `;
+            if (data.files && data.files.length > 0) {
+                data.files.forEach(file => {
+                    html += `
+                        <div class="file-item">
+                            <span>${file}</span>
+                            <a href="${getApiUrl('/download/' + file)}" target="_blank" class="btn">Download</a>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<p>No files generated</p>';
+            }
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('results').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

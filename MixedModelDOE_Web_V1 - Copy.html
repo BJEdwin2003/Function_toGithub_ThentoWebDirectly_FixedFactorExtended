@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOE Analysis Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+            background-color: #f3f2f1;
+            color: #323130;
+            line-height: 1.4;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background-color: #0078d4;
+            color: white;
+            padding: 24px 32px;
+            border-bottom: 1px solid #deecf9;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .header p {
+            font-size: 16px;
+            font-weight: 400;
+            opacity: 0.9;
+            color: #ffffff;
+        }
+        
+        .content {
+            padding: 32px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .page-description {
+            font-size: 16px;
+            color: #605e5c;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+        
+        .config-section {
+            background-color: #ffffff;
+            border: 1px solid #edebe9;
+            border-radius: 4px;
+            margin-bottom: 24px;
+            box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108);
+        }
+        
+        .config-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #edebe9;
+            background-color: #faf9f8;
+        }
+        
+        .config-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #323130;
+            margin: 0;
+        }
+        
+        .config-content {
+            padding: 24px;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .config-item {
+            padding: 16px;
+            background-color: #f3f2f1;
+            border-radius: 4px;
+            border-left: 4px solid #0078d4;
+        }
+        
+        .config-item strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 4px;
+        }
+        
+        .config-item span {
+            font-size: 14px;
+            color: #605e5c;
+            word-break: break-all;
+        }
+        
+        .upload-section {
+            background-color: #ffffff;
+            border: 1px solid #edebe9;
+            border-radius: 4px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108);
+        }
+        
+        .upload-section h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 16px;
+        }
+        
+        input[type="file"] {
+            margin: 16px 0 24px 0;
+            padding: 8px 12px;
+            border: 1px solid #605e5c;
+            border-radius: 2px;
+            width: 100%;
+            max-width: 400px;
+            font-size: 14px;
+            font-family: inherit;
+            background-color: #ffffff;
+        }
+        
+        input[type="file"]:focus {
+            outline: 2px solid #0078d4;
+            outline-offset: 1px;
+            border-color: #0078d4;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background-color: #0078d4;
+            border: 1px solid #0078d4;
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 400;
+            font-family: inherit;
+            min-width: 120px;
+            height: 32px;
+            transition: background-color 0.1s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn:hover {
+            background-color: #106ebe;
+            border-color: #106ebe;
+        }
+        
+        .btn:active {
+            background-color: #005a9e;
+            border-color: #005a9e;
+        }
+        
+        .btn:focus {
+            outline: 2px solid #0078d4;
+            outline-offset: 1px;
+        }
+        
+        .btn-secondary {
+            background-color: #ffffff;
+            border: 1px solid #8a8886;
+            color: #323130;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f3f2f1;
+            border-color: #605e5c;
+            color: #323130;
+        }
+        
+        .btn-secondary:active {
+            background-color: #edebe9;
+            border-color: #323130;
+            color: #323130;
+        }
+        
+        .results {
+            background-color: #ffffff;
+            border: 1px solid #edebe9;
+            border-radius: 4px;
+            margin-top: 24px;
+            box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108);
+            overflow: hidden;
+        }
+        
+        .loading {
+            padding: 32px;
+            text-align: center;
+            background-color: #deecf9;
+            border-left: 4px solid #0078d4;
+        }
+        
+        .loading h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 12px;
+        }
+        
+        .loading p {
+            font-size: 14px;
+            color: #605e5c;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #c7e0f4;
+            border-top: 2px solid #0078d4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .success {
+            padding: 24px;
+            background-color: #dff6dd;
+            border-left: 4px solid #107c10;
+        }
+        
+        .success h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 16px;
+        }
+        
+        .error {
+            padding: 24px;
+            background-color: #fde7e9;
+            border-left: 4px solid #d13438;
+        }
+        
+        .error h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #323130;
+            margin-bottom: 12px;
+        }
+        
+        .error p {
+            font-size: 14px;
+            color: #605e5c;
+        }
+        
+        pre {
+            background-color: #323130;
+            color: #ffffff;
+            padding: 16px;
+            border-radius: 2px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            margin: 16px 0;
+        }
+        
+        .files-section h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #323130;
+            margin: 20px 0 12px 0;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background-color: #f3f2f1;
+            border: 1px solid #edebe9;
+            border-radius: 2px;
+            transition: background-color 0.1s ease;
+        }
+        
+        .file-item:hover {
+            background-color: #edebe9;
+            border-color: #c8c6c4;
+        }
+        
+        .file-item span {
+            font-size: 14px;
+            color: #323130;
+            flex: 1;
+        }
+        
+        .download-btn {
+            background-color: #107c10;
+            border: 1px solid #107c10;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 4px 12px;
+            border-radius: 2px;
+            font-size: 12px;
+            font-weight: 400;
+            transition: background-color 0.1s ease;
+            margin-left: 12px;
+        }
+        
+        .download-btn:hover {
+            background-color: #0e700e;
+            border-color: #0e700e;
+        }
+        
+        .copy-btn {
+            background-color: #0078d4;
+            border: 1px solid #0078d4;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 2px;
+            font-size: 14px;
+            font-weight: 400;
+            transition: background-color 0.1s ease;
+            margin: 16px 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 200px;
+        }
+        
+        .copy-btn:hover {
+            background-color: #106ebe;
+            border-color: #106ebe;
+        }
+        
+        .copy-btn:active {
+            background-color: #005a9e;
+            border-color: #005a9e;
+        }
+        
+        .copy-success {
+            background-color: #107c10 !important;
+            border-color: #107c10 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                padding: 16px;
+            }
+            
+            .header {
+                padding: 16px 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .page-title {
+                font-size: 28px;
+            }
+            
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DOE Analysis Interface</h1>
+            <p>Design of Experiments Statistical Analysis Platform</p>
+        </div>
+        
+        <div class="content">
+            <h1 class="page-title">DOE Analysis</h1>
+            <p class="page-description">Upload your CSV file and run statistical analysis with our Design of Experiments platform.</p>
+            
+            <div class="config-section">
+                <div class="config-header">
+                    <h3>API Configuration</h3>
+                </div>
+                <div class="config-content">
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <strong>Endpoint</strong>
+                            <span>https://function-togithub-thentowebdirectly.onrender.com/runDOE</span>
+                        </div>
+                        <div class="config-item">
+                            <strong>Response Variables</strong>
+                            <span>Lvalue, Avalue, Bvalue</span>
+                        </div>
+                        <div class="config-item">
+                            <strong>Predictors</strong>
+                            <span>dye1, dye2, Time, Temp</span>
+                        </div>
+                        <div class="config-item">
+                            <strong>Threshold</strong>
+                            <span>1.3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="upload-section">
+                <h3>Select CSV File</h3>
+                <input type="file" id="csvFile" accept=".csv" onchange="handleCSVHeader()" />
+                <div id="columnSelectors" style="margin: 20px 0;"></div>
+                <div class="button-group">
+                    <button onclick="runDOEInputExtended()" class="btn">Run DOE (Custom X/Y)</button>
+                    <button onclick="testConnection()" class="btn btn-secondary">Test Connection</button>
+                </div>
+            </div>
+
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+
+        // 读取CSV首行并生成下拉框
+        function handleCSVHeader() {
+            const fileInput = document.getElementById('csvFile');
+            const selectorsDiv = document.getElementById('columnSelectors');
+            selectorsDiv.innerHTML = '';
+            if (!fileInput.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const firstLine = text.split(/\r?\n/)[0];
+                let columns = firstLine.split(',').map(s => s.trim()).filter(Boolean);
+                if (columns.length === 0) {
+                    selectorsDiv.innerHTML = '<span style="color:red">Failed to parse CSV header.</span>';
+                    return;
+                }
+                // 生成多选下拉框
+                selectorsDiv.innerHTML = `
+                    <label><b>Predictors (X):</b></label><br>
+                    <select id="predictorsSelect" multiple size="6" style="min-width:200px; margin-bottom:10px;">
+                        ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                    </select><br>
+                    <label><b>Response Variables (Y):</b></label><br>
+                    <select id="responseVarsSelect" multiple size="4" style="min-width:200px;">
+                        ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                    </select>
+                `;
+            };
+            reader.readAsText(fileInput.files[0]);
+        }
+
+        // 提交到 /DOE_InputExtended
+        async function runDOEInputExtended() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files[0]) {
+                showError('Please select a CSV file first');
+                return;
+            }
+            // 获取选择的列
+            const predictors = Array.from(document.getElementById('predictorsSelect')?.selectedOptions || []).map(o => o.value);
+            const responseVars = Array.from(document.getElementById('responseVarsSelect')?.selectedOptions || []).map(o => o.value);
+            if (predictors.length === 0 || responseVars.length === 0) {
+                showError('Please select at least one predictor and one response variable.');
+                return;
+            }
+            showLoading();
+            // 先上传文件，获取 file_path
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            let file_path = '';
+            try {
+                const uploadResp = await fetch('https://function-togithub-thentowebdirectly.onrender.com/runDOE', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!uploadResp.ok) {
+                    const errorText = await uploadResp.text();
+                    showError(`File upload failed: ${errorText}`);
+                    return;
+                }
+                const uploadResult = await uploadResp.json();
+                file_path = uploadResult.input_file;
+            } catch (e) {
+                showError('File upload failed: ' + e.message);
+                return;
+            }
+            // 调用 /DOE_InputExtended
+            try {
+                const resp = await fetch('https://function-togithub-thentowebdirectly.onrender.com/DOE_InputExtended', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file_path,
+                        predictors,
+                        response_vars: responseVars
+                    })
+                });
+                if (resp.ok) {
+                    const result = await resp.json();
+                    showSuccess(result);
+                } else {
+                    const errorText = await resp.text();
+                    showError(`HTTP ${resp.status}: ${errorText}`);
+                }
+            } catch (e) {
+                showError('DOE analysis failed: ' + e.message);
+            }
+        }
+
+        async function testConnection() {
+            showLoading();
+
+            try {
+                const response = await fetch('https://function-togithub-thentowebdirectly.onrender.com/runDOE');
+                const data = await response.json();
+                
+                document.getElementById('results').innerHTML = `
+                    <div class="results success">
+                        <h3>Connection Test Successful</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                showError(`Connection test failed: ${error.message}`);
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('results').innerHTML = `
+                <div class="results loading">
+                    <div class="spinner"></div>
+                    <h3>Processing</h3>
+                    <p>Please wait while we analyze your data...</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('results').innerHTML = `
+                <div class="results error">
+                    <h3>Operation Failed</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function showSuccess(data) {
+            let html = `
+                <div class="results success">
+                    <h3>Analysis Completed Successfully</h3>
+                    <button onclick="copyResultsToClipboard()" class="copy-btn" id="copyBtn">📋 Copy Results to Clipboard (for Copilot Chat)</button>
+                    <div class="files-section">
+                        <h4>Console Output</h4>
+                        <pre id="consoleOutput">${data.console_output || 'No console output available'}</pre>
+                        <h4>Generated Files</h4>
+                        <div>
+            `;
+            
+            if (data.files && data.files.length > 0) {
+                data.files.forEach(file => {
+                    html += `
+                        <div class="file-item">
+                            <span>${file}</span>
+                            <a href="https://function-togithub-thentowebdirectly.onrender.com/download/${file}" 
+                               target="_blank" class="download-btn">Download</a>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<p>No files generated</p>';
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('results').innerHTML = html;
+        }
+        
+        async function copyResultsToClipboard() {
+            try {
+                const consoleOutput = document.getElementById('consoleOutput');
+                if (!consoleOutput) {
+                    alert('No analysis results found! Please run DOE analysis first.');
+                    return;
+                }
+                
+                const resultText = consoleOutput.textContent;
+                
+                // Format results for easy pasting to Copilot Chat
+                const formattedText = `DOE Analysis Results:
+
+${resultText}
+
+---
+Please help me interpret the main findings and recommendations from this DOE statistical analysis.`;
+                
+                await navigator.clipboard.writeText(formattedText);
+                
+                // Button feedback
+                const copyBtn = document.getElementById('copyBtn');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✅ Copied! Now you can paste to Copilot Chat';
+                copyBtn.classList.add('copy-success');
+                
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.classList.remove('copy-success');
+                }, 3000);
+                
+            } catch (err) {
+                console.error('Copy failed:', err);
+                alert('Copy failed! Please manually select and copy the text.');
+            }
+        }
+    </script>
+</body>
+</html>
