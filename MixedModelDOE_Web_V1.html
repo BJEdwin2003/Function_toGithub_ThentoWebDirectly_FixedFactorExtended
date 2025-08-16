@@ -510,6 +510,8 @@
                 showError('Please select at least one predictor and one response variable.');
                 return;
             }
+            // 调试输出，排查实际传递的X/Y
+            console.log('Predictors:', predictors, 'ResponseVars:', responseVars);
             showLoading();
             // 先上传文件，获取 file_path
             const formData = new FormData();
