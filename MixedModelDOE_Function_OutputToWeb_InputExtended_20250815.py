@@ -20,13 +20,6 @@ import sys
 from io import StringIO
 
 def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, response_vars=None):
-    # 对X、Y变量名做strip和str转换，去除前后空格，确保和强制赋值时一致
-    if predictors:
-        predictors = [str(x).strip() for x in predictors]
-    if response_vars:
-        response_vars = [str(y).strip() for y in response_vars]
-    print(f"[DEBUG] Cleaned predictors: {predictors}")
-    print(f"[DEBUG] Cleaned response_vars: {response_vars}")
     """
     基于原始MixedModelDOE_Function_FollowOriginal_20250804.py的Web输出版本
     专门用于捕获控制台输出并返回给Web界面显示
