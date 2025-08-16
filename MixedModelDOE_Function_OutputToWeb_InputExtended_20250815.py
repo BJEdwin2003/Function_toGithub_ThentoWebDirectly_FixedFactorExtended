@@ -19,7 +19,7 @@ import os
 import sys
 from io import StringIO
 
-def run_mixed_model_doe_with_output(file_path, output_dir):
+def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, response_vars=None):
     """
     基于原始MixedModelDOE_Function_FollowOriginal_20250804.py的Web输出版本
     专门用于捕获控制台输出并返回给Web界面显示
@@ -38,12 +38,7 @@ def run_mixed_model_doe_with_output(file_path, output_dir):
     # 重定向输出到StringIO
     sys.stdout = console_output
     
-    import inspect
-    frame = inspect.currentframe()
-    args, _, _, values = inspect.getargvalues(frame)
-    response_vars = values.get('response_vars', None)
-    predictors = values.get('predictors', None)
-    group_keys = values.get('group_keys', None)
+    group_keys = None
     if response_vars is None:
         response_vars = ["Lvalue", "Avalue", "Bvalue"]
     if predictors is None:
