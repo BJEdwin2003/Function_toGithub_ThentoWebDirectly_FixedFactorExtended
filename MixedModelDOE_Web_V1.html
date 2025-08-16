@@ -544,6 +544,16 @@
                 });
                 if (resp.ok) {
                     const result = await resp.json();
+                    // 新增：分析成功后主动获取文件列表
+                    try {
+                        const filesResp = await fetch('https://function-togithub-thentowebdirectly-1zi3.onrender.com/files');
+                        if (filesResp.ok) {
+                            const filesData = await filesResp.json();
+                            result.files = filesData.files || [];
+                        }
+                    } catch (e) {
+                        // 忽略文件列表获取失败
+                    }
                     showSuccess(result);
                 } else {
                     const errorText = await resp.text();

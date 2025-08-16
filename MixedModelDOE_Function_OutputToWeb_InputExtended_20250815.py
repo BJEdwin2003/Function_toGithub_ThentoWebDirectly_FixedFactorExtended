@@ -38,13 +38,12 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
     # 重定向输出到StringIO
     sys.stdout = console_output
     
-    group_keys = None
-    if response_vars is None:
-        response_vars = ["Lvalue", "Avalue", "Bvalue"]
-    if predictors is None:
-        predictors = ["dye1", "dye2", "dye3", "Time", "Temp"]
-    if group_keys is None:
-        group_keys = ["dye1", "dye2", "dye3", "Time", "Temp"]
+    # 用户必须显式选择 predictors (X) 和 response_vars (Y)
+    if not predictors or not isinstance(predictors, list) or len(predictors) == 0:
+        raise ValueError("必须选择至少一个预测因子 (X)。请在界面上选择X变量！")
+    if not response_vars or not isinstance(response_vars, list) or len(response_vars) == 0:
+        raise ValueError("必须选择至少一个响应变量 (Y)。请在界面上选择Y变量！")
+    group_keys = predictors.copy()  # 分组键动态跟随X
 
     try:
         # === 1. 数据导入 ===
