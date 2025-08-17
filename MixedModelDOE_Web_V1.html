@@ -134,22 +134,72 @@
             margin-bottom: 16px;
         }
         
+
         input[type="file"] {
             margin: 16px 0 24px 0;
             padding: 8px 12px;
-            border: 1px solid #605e5c;
-            border-radius: 2px;
+            border: 1.5px solid #c8c6c4;
+            border-radius: 4px;
             width: 100%;
             max-width: 400px;
-            font-size: 14px;
+            font-size: 15px;
             font-family: inherit;
-            background-color: #ffffff;
+            background-color: #f3f2f1;
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04);
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
-        
+
         input[type="file"]:focus {
             outline: 2px solid #0078d4;
             outline-offset: 1px;
             border-color: #0078d4;
+            background-color: #fff;
+        }
+
+        /* Modern Microsoft style for multi-select dropdowns */
+        .modern-select {
+            min-width: 320px;
+            max-width: 380px;
+            padding: 10px;
+            border: 1.5px solid #c8c6c4;
+            border-radius: 6px;
+            background: #f3f2f1;
+            font-size: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04);
+            color: #323130;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+            /* 自定义滚动条宽度 */
+            scrollbar-width: thick; /* Firefox */
+        }
+
+        /* Chrome/Edge/Safari 滚动条美化 */
+        .modern-select::-webkit-scrollbar {
+            width: 18px;
+            background: #e5e5e5;
+            border-radius: 8px;
+        }
+        .modern-select::-webkit-scrollbar-thumb {
+            background: #bdbdbd;
+            border-radius: 8px;
+            border: 4px solid #e5e5e5;
+        }
+        .modern-select::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+        .modern-select:focus {
+            border-color: #0078d4;
+            background: #fff;
+            outline: 2px solid #0078d4;
+            outline-offset: 1px;
+        }
+        .modern-select option {
+            padding: 6px 10px;
+            font-size: 15px;
+        }
+        .modern-select:hover {
+            border-color: #106ebe;
+            background: #e5f1fb;
         }
         
         .button-group {
@@ -416,13 +466,19 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>DOE Analysis Interface</h1>
-            <p>Design of Experiments Statistical Analysis Platform</p>
+            <h1 style="font-size:32px; font-weight:700; letter-spacing:-0.02em;">Mixed Model DOE</h1>
+            <div style="font-size:18px; font-weight:400; opacity:0.92; margin-bottom:2px; line-height:1.3; display:flex; align-items:center; gap:18px; flex-wrap:wrap; color:#fff;">
+                <span>by Edwin Zhang</span>
+                <span style="font-size:18px; color:#fff; letter-spacing:0.01em;">lezhang3@microsoft.com</span>
+            </div>
         </div>
         
         <div class="content">
-            <h1 class="page-title">DOE Analysis</h1>
-            <p class="page-description">Upload your CSV file and run statistical analysis with our Design of Experiments platform.</p>
+            <h1 class="page-title" style="margin-bottom:10px;">Mixed Model</h1>
+            <p class="page-description" style="font-size:16px; color:#323130; margin-bottom:24px; font-weight:400;">
+                A Mixed Model (also called a mixed-effects model) is a statistical framework that combines fixed effects—which represent consistent, repeatable influences across all observations—with random effects, which capture variability across groups or clusters (e.g., batches, machines, operators).<br><br>
+                Mixed models are particularly valuable when data is hierarchically structured or grouped, and when observations within those groups are not independent. This often occurs in manufacturing, clinical trials, or longitudinal studies.
+            </p>
             
             <div class="config-section">
                 <div class="config-header">
@@ -434,13 +490,13 @@
                             <strong>Endpoint</strong>
                             <span>https://function-togithub-thentowebdirectly-1zi3.onrender.com/runDOE</span>
                         </div>
-                        <div class="config-item">
-                            <strong>Response Variables</strong>
-                            <span>Lvalue, Avalue, Bvalue</span>
+                        <div class="config-item" id="predictorsBox">
+                            <strong>Predictors (X)</strong>
+                            <span id="predictorsBoxContent" style="color:#605e5c;">Please select X factors from the drop list.</span>
                         </div>
-                        <div class="config-item">
-                            <strong>Predictors</strong>
-                            <span>dye1, dye2, Time, Temp</span>
+                        <div class="config-item" id="responseVarsBox">
+                            <strong>Response Variables (Y)</strong>
+                            <span id="responseVarsBoxContent" style="color:#605e5c;">Please select Y factors from the drop list.</span>
                         </div>
                         <div class="config-item">
                             <strong>Threshold</strong>
@@ -452,7 +508,7 @@
 
             <div class="upload-section">
                 <h3>Select CSV File</h3>
-                <input type="file" id="csvFile" accept=".csv" onchange="handleCSVHeader()" />
+                <input type="file" id="csvFile" accept=".csv" onchange="handleCSVHeader()" style="margin-bottom:18px;" />
                 <div id="columnSelectors" style="margin: 20px 0;"></div>
                 <div class="button-group">
                     <button onclick="runDOEInputExtended()" class="btn">Run DOE (Custom X/Y)</button>
@@ -476,22 +532,69 @@
             reader.onload = function(e) {
                 const text = e.target.result;
                 const firstLine = text.split(/\r?\n/)[0];
-                let columns = firstLine.split(',').map(s => s.trim()).filter(Boolean);
+                // Split CSV header by comma, but ignore commas inside quotes
+                let columns = [];
+                let regex = /(?:"([^"]*)"|([^",]+))(,|$)/g;
+                let match;
+                while ((match = regex.exec(firstLine)) !== null) {
+                    let col = match[1] !== undefined ? match[1] : match[2];
+                    if (col !== undefined) columns.push(col.trim());
+                }
                 if (columns.length === 0) {
                     selectorsDiv.innerHTML = '<span style="color:red">Failed to parse CSV header.</span>';
                     return;
                 }
-                // 生成多选下拉框
+                // 生成多选下拉框，顺序为 X 在前，Y 在后，且美化样式
                 selectorsDiv.innerHTML = `
-                    <label><b>Predictors (X):</b></label><br>
-                    <select id="predictorsSelect" multiple size="6" style="min-width:200px; margin-bottom:10px;">
-                        ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
-                    </select><br>
-                    <label><b>Response Variables (Y):</b></label><br>
-                    <select id="responseVarsSelect" multiple size="4" style="min-width:200px;">
-                        ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
-                    </select>
+                    <div style="display:flex; gap:32px; justify-content:center; flex-wrap:wrap;">
+                        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                            <label for="predictorsSelect" style="font-weight:600; color:#323130; margin-bottom:6px;">Predictors (X):</label>
+                            <select id="predictorsSelect" class="modern-select" multiple size="6">
+                                ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                            <label for="responseVarsSelect" style="font-weight:600; color:#323130; margin-bottom:6px;">Response Variables (Y):</label>
+                            <select id="responseVarsSelect" class="modern-select" multiple size="4">
+                                ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
                 `;
+                // 绑定事件，确保每次生成后都能响应
+                setTimeout(() => {
+                    const predictorsSel = document.getElementById('predictorsSelect');
+                    const responseVarsSel = document.getElementById('responseVarsSelect');
+                    if (predictorsSel) predictorsSel.onchange = updateSelectedFactors;
+                    if (responseVarsSel) responseVarsSel.onchange = updateSelectedFactors;
+                    updateSelectedFactors();
+                }, 0);
+
+        // 更新config-section中X/Y显示
+        function updateSelectedFactors() {
+            const predictorsSel = document.getElementById('predictorsSelect');
+            const responseVarsSel = document.getElementById('responseVarsSelect');
+            const predictorsBoxContent = document.getElementById('predictorsBoxContent');
+            const responseVarsBoxContent = document.getElementById('responseVarsBoxContent');
+            let predictors = [];
+            let responseVars = [];
+            if (predictorsSel) predictors = Array.from(predictorsSel.selectedOptions).map(o => o.value);
+            if (responseVarsSel) responseVars = Array.from(responseVarsSel.selectedOptions).map(o => o.value);
+            if (predictorsBoxContent) {
+                if (predictors.length > 0) {
+                    predictorsBoxContent.innerHTML = `<b>The selected X factors:</b> ` + predictors.join(', ');
+                } else {
+                    predictorsBoxContent.textContent = 'Please select X factors from the drop list.';
+                }
+            }
+            if (responseVarsBoxContent) {
+                if (responseVars.length > 0) {
+                    responseVarsBoxContent.innerHTML = `<b>The selected Y factors:</b> ` + responseVars.join(', ');
+                } else {
+                    responseVarsBoxContent.textContent = 'Please select Y factors from the drop list.';
+                }
+            }
+        }
             };
             reader.readAsText(fileInput.files[0]);
         }

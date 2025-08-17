@@ -21,59 +21,59 @@ from io import StringIO
 
 def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, response_vars=None):
     """
-    Web output version based on the original MixedModelDOE_Function_FollowOriginal_20250804.py
-    Specially used to capture all console output and return it to the web interface for display
-
-    New features:
-    1. Capture all console output
-    2. Return formatted analysis result text
-    3. Save console output to file
-    4. Keep the original analysis logic unchanged
+    基于原始MixedModelDOE_Function_FollowOriginal_20250804.py的Web输出版本
+    专门用于捕获控制台输出并返回给Web界面显示
+    
+    新增功能：
+    1. 捕获所有控制台输出
+    2. 返回格式化的分析结果文本
+    3. 保存控制台输出到文件
+    4. 保持原始分析逻辑不变
     """
     
-    # 🔧 Capture all console output
+    # 🔧 捕获所有控制台输出
     console_output = StringIO()
     original_stdout = sys.stdout
     
-    # Redirect output to StringIO
+    # 重定向输出到StringIO
     sys.stdout = console_output
     
-    # User must explicitly select predictors (X) and response_vars (Y)
+    # 用户必须显式选择 predictors (X) 和 response_vars (Y)
     if not predictors or not isinstance(predictors, list) or len(predictors) == 0:
-        raise ValueError("At least one predictor (X) must be selected. Please select X variables in the interface!")
+        raise ValueError("必须选择至少一个预测因子 (X)。请在界面上选择X变量！")
     if not response_vars or not isinstance(response_vars, list) or len(response_vars) == 0:
-        raise ValueError("At least one response variable (Y) must be selected. Please select Y variables in the interface!")
-    group_keys = predictors.copy()  # Group keys dynamically follow X
+        raise ValueError("必须选择至少一个响应变量 (Y)。请在界面上选择Y变量！")
+    group_keys = predictors.copy()  # 分组键动态跟随X
 
     try:
-        # === 1. Data Import ===
+        # === 1. 数据导入 ===
         df_raw = pd.read_csv(file_path)
-        # Only keep numeric predictors
+        # 只保留数值型predictors
         valid_predictors = [col for col in predictors if col in df_raw.columns and pd.api.types.is_numeric_dtype(df_raw[col])]
         if not valid_predictors:
-            raise ValueError("No valid numeric predictors available for modeling!")
+            raise ValueError("无有效数值型预测因子可用于建模！")
         predictors = valid_predictors
 
-        print("🚀 Starting DOE Mixed Model analysis...")
-        print(f"📊 Data file: {file_path}")
-        print(f"📈 Response variables: {response_vars}")
-        print(f"🔧 Predictors: {predictors}")
-        print(f"📏 Data shape: {df_raw.shape}")
+        print("🚀 开始DOE混合模型分析...")
+        print(f"📊 数据文件: {file_path}")
+        print(f"📈 响应变量: {response_vars}")
+        print(f"🔧 预测因子: {predictors}")
+        print(f"📏 数据维度: {df_raw.shape}")
 
-        # === 2. Standardization for simplified model building ===
+        # === 2. 标准化用于 simplified 模型建模 ===
         scaler = StandardScaler()
         df = df_raw.copy()
         df[predictors] = scaler.fit_transform(df[predictors])
 
-        print("\n✅ Data standardization completed")
-        print("📏 Statistics after standardization:")
-        print(f"   Mean: {df[predictors].mean().values}")
-        print(f"   Std: {df[predictors].std(ddof=0).values}")
-        print(f"   Original mean (X_mean): {scaler.mean_}")
-        print(f"   Original std (X_std): {scaler.scale_}")
+        print("\n✅ 数据标准化完成")
+        print("📏 标准化后的统计信息:")
+        print(f"   均值: {df[predictors].mean().values}")
+        print(f"   标准差: {df[predictors].std(ddof=0).values}")
+        print(f"   原始均值 (X_mean): {scaler.mean_}")
+        print(f"   原始标准差 (X_std): {scaler.scale_}")
 
-        # === 6. Construct original Config key (JMP compatible) ===
-        # Auto compatible group_keys: use single column directly, combine multiple columns
+        # === 6. 构造原始 Config 键值（JMP 对齐）===
+        # 自动兼容 group_keys: 单列直接用，多列组合
         valid_group_keys = [col for col in group_keys if col in df_raw.columns]
         if not valid_group_keys:
             # fallback: use default
@@ -84,7 +84,7 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
             df_raw["Config_combo"] = df_raw[valid_group_keys].astype(str).agg("_".join, axis=1)
         df["Config_combo"] = df_raw["Config_combo"]
 
-        # === 3. Construct RSM terms ===
+        # === 3. 构造 RSM 项 ===
         def create_rsm_terms(terms):
             linear = terms
             square = [f"I({t}**2)" for t in terms]
@@ -92,13 +92,13 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
             return linear + square + inter
 
         rsm_terms = create_rsm_terms(predictors)
-        print(f"\n🔧 Constructing RSM terms: {len(rsm_terms)} terms")
-        print(f"   Linear terms: {predictors}")
-        print(f"   Square terms: {[f'I({t}**2)' for t in predictors]}")
-        print(f"   Interaction terms: {[f'{a}:{b}' for a, b in combinations(predictors, 2)]}")
+        print(f"\n🔧 构造RSM项: {len(rsm_terms)}个项")
+        print(f"   线性项: {predictors}")
+        print(f"   平方项: {[f'I({t}**2)' for t in predictors]}")
+        print(f"   交互项: {[f'{a}:{b}' for a, b in combinations(predictors, 2)]}")
 
-        # === 4. Full model LogWorth scan ===
-        print("\n📊 Starting full model LogWorth analysis...")
+        # === 4. 全模型 LogWorth 扫描 ===
+        print("\n📊 开始全模型LogWorth分析...")
         effect_summary_all = pd.DataFrame()
         for y in response_vars:
             formula = f"{y} ~ " + " + ".join(rsm_terms)
@@ -117,7 +117,7 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
         effect_summary_all["Appears_Significant"] = (effect_summary_all[response_vars] > 1.3).sum(axis=1)
         effect_summary_all = effect_summary_all.sort_values("Max_LogWorth", ascending=False)
 
-        # === 5. Select simplified factors (keep hierarchy) ===
+        # === 5. 筛选简化因子（保持 hierarchy）===
         def get_simplified_factors(effect_matrix, threshold=1.3, min_significant=2):
             factors = effect_matrix[
                 (effect_matrix["Max_LogWorth"] >= threshold) | 
@@ -137,29 +137,31 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
 
         simplified_factors = get_simplified_factors(effect_summary_all)
 
-        # === 7. Collinearity check ===
+    # ...existing code...
+
+        # === 7. 共线性检查 ===
         try:
             x = dmatrix(" + ".join(simplified_factors), data=df, return_type="dataframe")
             xtx = x.T @ x
             condition_number = np.linalg.cond(xtx.values)
-            print(f"\n📐 Collinearity check - X'X condition number: {condition_number:.2f}")
+            print(f"\n📐 共线性检查 - X'X条件数: {condition_number:.2f}")
         except Exception as e:
-            print(f"\n❌ Design matrix construction error: {str(e)}")
+            print(f"\n❌ 设计矩阵构建错误: {str(e)}")
             condition_number = float('inf')
 
-        # === 8. Print output: Full Model + Simplified Model LogWorth ===
+        # === 8. 打印输出：Full Model + Simplified Model LogWorth ===
         print("\n" + "="*80)
-        print("📊 Full model effect summary table (LogWorth)")
+        print("📊 全模型效应汇总表 (LogWorth)")
         print("="*80)
         print(effect_summary_all.to_string(index=False))
 
-        print(f"\n✅ Recommended simplified factors (with hierarchy): {simplified_factors}")
-        print(f"📐 Collinearity check - X'X condition number: {condition_number:.2f}")
+        print(f"\n✅ 建议的简化因子 (含层次结构): {simplified_factors}")
+        print(f"📐 共线性检查 - X'X条件数: {condition_number:.2f}")
 
-        # Build simplified_logworth_df
+        # 构建 simplified_logworth_df
         simplified_logworth_df = pd.DataFrame()
         for y in response_vars:
-            print(f"\n🔍 Building simplified model: {y}")
+            print(f"\n🔍 构建简化模型: {y}")
             formula = f"{y} ~ " + " + ".join(simplified_factors)
             model = smf.ols(formula=formula, data=df).fit()
             anova_tbl = anova_lm(model, typ=3).reset_index()
@@ -177,13 +179,13 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
         simplified_logworth_df = simplified_logworth_df.sort_values("Max_LogWorth", ascending=False)
 
         print("\n" + "="*80)
-        print("📊 Simplified model effect summary table (LogWorth)")
+        print("📊 简化模型效应汇总表 (LogWorth)")
         print("="*80)
         print(simplified_logworth_df.to_string(index=False))
 
-        # === Part 2: Mixed model fitting and diagnostics ===
+        # === Part 2: 混合模型建模与诊断 ===
         print("\n" + "="*80)
-        print("🔧 Starting mixed effects model fitting")
+        print("🔧 开始混合效应模型拟合")
         print("="*80)
 
         models = {}
@@ -195,19 +197,19 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
 
         for y in response_vars:
             try:
-                print(f"\n🔧 Fitting mixed model: {y}")
-                # Build Mixed Model (Config_combo as random group variable)
+                print(f"\n🔧 拟合混合模型: {y}")
+                # 构建 Mixed Model（含 Config_combo 为随机组变量）
                 formula = f"{y} ~ " + " + ".join(simplified_factors)
                 model = mixedlm(formula, data=df, groups=df["Config_combo"])
                 model_fit = model.fit(reml=True)
                 
-                # Variance components (for diagnostics)
+                # 方差组分（用于诊断）
                 group_var = model_fit.cov_re.iloc[0, 0] if model_fit.cov_re.shape[0] > 0 else np.nan
                 residual_var = model_fit.scale  # == RMSE²
                 
-                print(f"📊 Variance components - {y}:")
-                print(f"   Group variance (Config): {group_var:.4f}")
-                print(f"   Residual variance (Error): {residual_var:.4f}")
+                print(f"📊 方差组分 - {y}:")
+                print(f"   组间方差 (Config): {group_var:.4f}")
+                print(f"   残差方差 (Error): {residual_var:.4f}")
                 print(f"   RMSE: {np.sqrt(residual_var):.4f}")
 
                 var_records.append({
@@ -223,12 +225,12 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
                 y_pred = model_fit.fittedvalues
                 resid = y_true - y_pred
 
-                # Approximate R²
+                # 近似 R²
                 ss_total = np.sum((y_true - y_true.mean()) ** 2)
                 ss_resid = np.sum((y_true - y_pred) ** 2)
                 r_squared = 1 - ss_resid / ss_total
 
-                # Adjusted R² (approximate)
+                # Adjusted R² 近似
                 k = model_fit.k_fe - 1
                 n = len(y_true)
                 adj_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - k - 1)
@@ -252,7 +254,7 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
                 coef_tbl["LogWorth"] = -np.log10(coef_tbl["P>|z|"].replace(0, 1e-16))
                 param_coded_list.append(coef_tbl[["Response", "Factor", "Coef.", "P>|z|", "LogWorth"]])
 
-                # Parameter unstandardization (decode)
+                # 参数反标准化（解码）
                 X_mean = scaler.mean_
                 X_scale = scaler.scale_
                 uncoded = []
@@ -298,7 +300,7 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
                 uncoded_df["Response"] = y
                 param_uncoded_list.append(uncoded_df)
 
-                # JMP style LOF analysis
+                # JMP 风格 LOF 分析
                 df_raw["_fitted"] = y_pred
                 group_df = df_raw.groupby("Config_combo").agg(
                     local_avg=(y, "mean"),
@@ -332,47 +334,47 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
                 })
 
             except Exception as e:
-                print(f"❌ Model fitting failed - {y}: {e}")
+                print(f"❌ 模型拟合失败 - {y}: {e}")
 
-        # === Diagnostics summary output ===
+        # === 诊断汇总输出 ===
         print("\n" + "="*80)
-        print("📋 JMP-style diagnostics summary")
+        print("📋 JMP风格诊断汇总")
         print("="*80)
 
         for diag, uncoded_df in zip(diagnostics_summary, param_uncoded_list):
             y = diag["Response"]
-            print(f"\n▶ Response variable: {y}")
+            print(f"\n▶ 响应变量: {y}")
             print("-" * 60)
-            print(f"Approximate R²           : {diag['R2_Approximate']:.4f}")
-            print(f"Adjusted R² (approximate): {diag['Adjusted_R2_Approximate']:.4f}")
-            print(f"RMSE                     : {diag['RMSE']:.4f}")
-            print(f"Mean of response         : {diag['Mean_Response']:.4f}")
-            print(f"Number of observations   : {diag['Observations']}")
+            print(f"近似R²               : {diag['R2_Approximate']:.4f}")
+            print(f"调整R² (近似)        : {diag['Adjusted_R2_Approximate']:.4f}")
+            print(f"RMSE                 : {diag['RMSE']:.4f}")
+            print(f"响应变量均值         : {diag['Mean_Response']:.4f}")
+            print(f"观测数               : {diag['Observations']}")
 
-            # LOF analysis result
+            # LOF 分析结果
             lof_row = next((r for r in lof_records if r["Response"] == y), None)
             if lof_row:
-                print(f"\n🔬 JMP-style lack-of-fit test:")
-                print(f"Lack of fit     – DF={lof_row['DF_LackOfFit']}, SS={lof_row['SS_LackOfFit']:.6f}, MS={lof_row['MS_LackOfFit']:.6f}")
-                print(f"Pure error      – DF={lof_row['DF_PureError']}, SS={lof_row['SS_PureError']:.6f}, MS={lof_row['MS_PureError']:.6f}")
-                print(f"Total error     – DF={lof_row['DF_LackOfFit'] + lof_row['DF_PureError']}, SS={(lof_row['SS_LackOfFit'] + lof_row['SS_PureError']):.6f}")
-                print(f"F ratio         : {lof_row['F_Ratio']:.4f}")
-                print(f"p-value         : {lof_row['p_Value']:.5f}")
+                print(f"\n🔬 JMP风格拟合缺失检验:")
+                print(f"拟合缺失     – DF={lof_row['DF_LackOfFit']}, SS={lof_row['SS_LackOfFit']:.6f}, MS={lof_row['MS_LackOfFit']:.6f}")
+                print(f"纯误差       – DF={lof_row['DF_PureError']}, SS={lof_row['SS_PureError']:.6f}, MS={lof_row['MS_PureError']:.6f}")
+                print(f"总误差       – DF={lof_row['DF_LackOfFit'] + lof_row['DF_PureError']}, SS={(lof_row['SS_LackOfFit'] + lof_row['SS_PureError']):.6f}")
+                print(f"F 比值       : {lof_row['F_Ratio']:.4f}")
+                print(f"p值          : {lof_row['p_Value']:.5f}")
             
-            # Uncoded fixed effect table
-            print(f"\n📄 Fixed effect estimates (uncoded):")
-            print(f"{'Estimate':>12s}    {'Term'}")
+            # 未编码固定效应表
+            print(f"\n📄 固定效应估计 (未编码):")
+            print(f"{'估计值':>12s}    {'项目'}")
             for idx, row in uncoded_df.iterrows():
                 print(f"{row['Estimate']:12.6f}    {row['Factor']}")
 
-        # === Save result files ===
+        # === 保存结果文件 ===
         print("\n" + "="*80)
-        print("💾 Saving analysis results")
+        print("💾 保存分析结果")
         print("="*80)
         
         os.makedirs(output_dir, exist_ok=True)
 
-        # Save fixed intercepts
+        # 保存固定截距
         fixed_intercepts = []
         for y in response_vars:
             beta_0 = models[y].fe_params["Intercept"]
@@ -381,7 +383,7 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
         fixed_df = pd.DataFrame(fixed_intercepts)
         fixed_df.to_csv(os.path.join(output_dir, "fixed_intercepts.csv"), index=False)
 
-        # Save various results
+        # 保存各种结果
         effect_summary_all.to_csv(os.path.join(output_dir, "fullmodel_logworth.csv"), index=False)
         simplified_logworth_df.to_csv(os.path.join(output_dir, "simplified_logworth.csv"), index=False)
         pd.concat(param_coded_list).to_csv(os.path.join(output_dir, "coded_parameters.csv"), index=False)
@@ -392,20 +394,20 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
         
         pd.DataFrame(lof_records).to_csv(os.path.join(output_dir, "JMP_style_lof.csv"), index=False)
         
-        # Standardization info
+        # 标准化信息
         pd.DataFrame({
             "Variable": predictors,
             "Mean": scaler.mean_,
             "StdDev": scaler.scale_
         }).to_csv(os.path.join(output_dir, "scaler.csv"), index=False)
 
-        # Model formulas
+        # 模型公式
         with open(os.path.join(output_dir, "model_formulas.txt"), "w") as f:
             for y in response_vars:
                 formula = f"{y} ~ " + " + ".join(simplified_factors)
                 f.write(f"{y} formula:\n{formula}\n\n")
 
-        # Residual data
+        # 残差数据
         for y in response_vars:
             try:
                 model_fit = models[y]
@@ -429,9 +431,9 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
                 df_out.to_csv(out_path)
 
             except Exception as e:
-                print(f"❌ Residual output failed [{y}]: {e}")
+                print(f"❌ 残差输出失败 [{y}]: {e}")
 
-        # Design data and other files
+        # 设计数据和其他文件
         df_raw.to_csv(os.path.join(output_dir, "design_data.csv"), index=False)
         
         df_var = pd.DataFrame(var_records)
@@ -447,20 +449,20 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
         })
         brief_df.to_csv(brief_path, index=False)
 
-        print(f"\n✅ All modeling results have been exported as CSV based on the mixed model, saved in: {output_dir}")
+        print(f"\n✅ 所有建模结果已基于混合模型导出为CSV，保存在：{output_dir}")
         
-        # File list
+        # 文件列表
         saved_files = [f for f in os.listdir(output_dir) if f.endswith(('.csv', '.txt'))]
-        print(f"📁 {len(saved_files)} result files generated:")
+        print(f"📁 共生成 {len(saved_files)} 个结果文件:")
         for file in sorted(saved_files):
             print(f"   - {file}")
 
     except Exception as e:
-        print(f"❌ Error occurred during analysis: {str(e)}")
+        print(f"❌ 分析过程中发生错误: {str(e)}")
         import traceback
         tb = traceback.format_exc()
-        print(f"Detailed error info:\n{tb}")
-        # Also write exception stack to Render platform log
+        print(f"详细错误信息:\n{tb}")
+        # 关键：将异常堆栈也写入 Render 平台日志
         try:
             with open("/tmp/last_error.log", "w", encoding="utf-8") as f:
                 f.write(tb)
@@ -468,27 +470,27 @@ def run_mixed_model_doe_with_output(file_path, output_dir, predictors=None, resp
             pass
     
     finally:
-    # Restore original output and get captured text
+        # 恢复原始输出并获取捕获的文本
         sys.stdout = original_stdout
         captured_output = console_output.getvalue()
         console_output.close()
         
-    # Save console output to file
+        # 保存控制台输出到文件
         if output_dir and os.path.exists(output_dir):
             console_output_path = os.path.join(output_dir, "console_output.txt")
             with open(console_output_path, "w", encoding="utf-8") as f:
                 f.write(captured_output)
         
-    # Return console output content
+        # 返回控制台输出内容
         return captured_output
 
-# Entry point for direct script run
+# 直接运行脚本时的入口
 if __name__ == "__main__":
     console_output = run_mixed_model_doe_with_output(
         r"C:\Zhanglei_Microsoft_Upgrade_by_20240905\Pytyon_Study_Local\Color_S2\DOEData_20250622.csv",
         r"C:\Zhanglei_Microsoft_Upgrade_by_20240905\Pytyon_Study_Local\Color_S2\DOE_MixedModel_Outputs"
     )
     print("=" * 80)
-    print("🖥️  VS Code terminal output (identical to Web output)")
+    print("🖥️  VS Code终端输出 (与Web输出完全相同)")
     print("=" * 80)
     print(console_output)
